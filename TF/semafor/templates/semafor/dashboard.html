@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Intersection Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #f3f6fc;
+            --bg-secondary: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.88);
+            --panel-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+            --text-body: #1f2933;
+            --text-muted: #64748b;
+            --accent-1: #2563eb;
+            --accent-2: #38bdf8;
+            --accent-3: #f59e0b;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --card-radius: 18px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #eef5ff 0%, #f8fbff 55%, #ffffff 100%);
+            color: var(--text-body);
+            min-height: 100vh;
+            padding: 48px 28px 60px;
+            line-height: 1.55;
+        }
+
+        body::before,
+        body::after {
+            content: none;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 1420px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 42px;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+
+        .header-title h1 {
+            font-size: clamp(2.2rem, 3vw, 3.2rem);
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title h1 span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: var(--accent-1);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+            font-size: 1.6rem;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-size: 1.05rem;
+            max-width: 480px;
+        }
+
+        .control-bar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .glow-button {
+            border: none;
+            padding: 14px 22px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1e293b;
+            background: linear-gradient(135deg, #93c5fd, #60a5fa);
+            box-shadow: 0 12px 30px rgba(96, 165, 250, 0.35);
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .glow-button.secondary {
+            background: linear-gradient(135deg, #fefce8, #fde68a);
+            color: #854d0e;
+            box-shadow: 0 10px 24px rgba(234, 179, 8, 0.2);
+        }
+
+        .glow-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 42px rgba(37, 99, 235, 0.35);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+            gap: 36px;
+            margin-bottom: 38px;
+        }
+
+        .lane-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+            border-radius: var(--card-radius);
+            padding: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: var(--panel-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lane-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(148, 197, 255, 0.18), transparent 70%);
+            pointer-events: none;
+        }
+
+        .lane-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 26px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .lane-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .lane-tag {
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.12);
+            color: #2563eb;
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            font-size: 0.85rem;
+            letter-spacing: 0.04em;
+        }
+
+        .camera-frame {
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: linear-gradient(180deg, #f8fbff 0%, #e0f2ff 100%);
+            height: 230px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(71, 85, 105, 0.85);
+            font-size: 1.06rem;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .camera-grid {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(148, 197, 255, 0.2) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(148, 197, 255, 0.2) 1px, transparent 1px);
+            background-size: 26px 26px;
+            opacity: 0.4;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .camera-feed.loaded {
+            opacity: 1;
+        }
+
+        .camera-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 16px;
+            color: rgba(71, 85, 105, 0.95);
+            z-index: 3;
+            transition: opacity 0.3s ease;
+        }
+
+        .camera-placeholder.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(120px, 1fr));
+            gap: 18px;
+            margin-bottom: 26px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .metric-card {
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 18px 20px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-card span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .metric-card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .traffic-light-wrap {
+            display: flex;
+            justify-content: center;
+            gap: 22px;
+            margin-bottom: 26px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .traffic-light {
+            width: 92px;
+            height: 260px;
+            border-radius: 28px;
+            background: linear-gradient(160deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: inset 0 12px 40px rgba(0, 0, 0, 0.55), 0 18px 40px rgba(15, 23, 42, 0.8);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .light {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(71, 85, 105, 0.6);
+            box-shadow: inset 0 8px 18px rgba(15, 23, 42, 0.85);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        .light.red.active {
+            background: radial-gradient(circle at 35% 35%, #f87171, #ef4444 65%, #7f1d1d 100%);
+            box-shadow: 0 0 35px rgba(248, 113, 113, 0.75), inset 0 10px 22px rgba(239, 68, 68, 0.6);
+            transform: scale(1.04);
+        }
+
+        .light.yellow.active {
+            background: radial-gradient(circle at 35% 35%, #fde68a, #f59e0b 65%, #78350f 100%);
+            box-shadow: 0 0 35px rgba(245, 158, 11, 0.7), inset 0 10px 22px rgba(245, 158, 11, 0.55);
+            transform: scale(1.04);
+        }
+
+        .light.green.active {
+            background: radial-gradient(circle at 35% 35%, #6ee7b7, #10b981 65%, #064e3b 100%);
+            box-shadow: 0 0 35px rgba(34, 197, 94, 0.75), inset 0 10px 22px rgba(16, 185, 129, 0.55);
+            transform: scale(1.04);
+        }
+
+        .timer {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            border-radius: 18px;
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timer label {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .timer .time {
+            font-size: 2.6rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .analytics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+
+        .analytic-card {
+            background: var(--bg-secondary);
+            border-radius: var(--card-radius);
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            box-shadow: var(--panel-shadow);
+            position: relative;
+        }
+
+        .analytic-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top left, rgba(147, 197, 253, 0.22), transparent 70%);
+            pointer-events: none;
+        }
+
+        .analytic-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+        }
+
+        .analytic-value {
+            font-size: 2.3rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #2563eb, #38bdf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 14px;
+            background: rgba(34, 197, 94, 0.14);
+            border: 1px solid rgba(34, 197, 94, 0.32);
+            color: var(--success);
+            font-size: 0.85rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-chip.offline {
+            background: rgba(220, 38, 38, 0.12);
+            border-color: rgba(220, 38, 38, 0.32);
+            color: var(--danger);
+        }
+
+        @media (max-width: 920px) {
+            body {
+                padding: 32px 20px 48px;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 620px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .control-bar {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .traffic-light-wrap {
+                transform: scale(0.9);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <header class="header">
+            <div class="header-title">
+                <h1><span>🚦</span> Smart Intersection</h1>
+                <p>Monitorizare și control în timp real pentru intersecții cu flux adaptiv și prioritizare dinamică.</p>
+            </div>
+            <div class="control-bar">
+                <button class="glow-button secondary">Export rapoarte</button>
+                <button class="glow-button">Sincronizare manuală</button>
+            </div>
+        </header>
+
+        <section class="layout">
+            <article class="lane-card">
+                <header class="lane-header">
+                    <h2>Drumul A</h2>
+                    <span class="lane-tag">Bandă 1</span>
+                </header>
+
+                <div class="camera-frame">
+                    <img
+                        id="camera1-feed"
+                        class="camera-feed"
+                        data-feed-url="/media/frames/lane1.jpg"
+                        data-placeholder="camera1-placeholder"
+                        alt="Flux cameră - Drumul A"
+                    />
+                    <div class="camera-grid"></div>
+                    <div id="camera1-placeholder" class="camera-placeholder">
+                        Flux cameră Drumul A indisponibil momentan
+                    </div>
+                </div>
+
+                <section class="metrics">
+                    <div class="metric-card">
+                        <span>Vehicule detectate</span>
+                        <div class="value" id="vehicles1">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <span>Stare curentă</span>
+                        <div class="value" id="status1">IDLE</div>
+                    </div>
+                    <div class="metric-card">
+                        <span>Prioritate</span>
+                        <div class="value" id="priority1">MED</div>
+                    </div>
+                </section>
+
+                <div class="traffic-light-wrap">
+                    <div class="traffic-light">
+                        <div id="light1-red" class="light red"></div>
+                        <div id="light1-yellow" class="light yellow"></div>
+                        <div id="light1-green" class="light green"></div>
+                    </div>
+                </div>
+
+                <div class="timer">
+                    <label>Timp rămas</label>
+                    <div class="time" id="timer1">0s</div>
+                </div>
+            </article>
+
+            <article class="lane-card">
+                <header class="lane-header">
+                    <h2>Drumul B</h2>
+                    <span class="lane-tag">Bandă 2</span>
+                </header>
+
+                <div class="camera-frame">
+                    <img
+                        id="camera2-feed"
+                        class="camera-feed"
+                        data-feed-url="/media/frames/lane2.jpg"
+                        data-placeholder="camera2-placeholder"
+                        alt="Flux cameră - Drumul B"
+                    />
+                    <div class="camera-grid"></div>
+                    <div id="camera2-placeholder" class="camera-placeholder">
+                        Flux cameră Drumul B indisponibil momentan
+                    </div>
+                </div>
+
+                <section class="metrics">
+                    <div class="metric-card">
+                        <span>Vehicule detectate</span>
+                        <div class="value" id="vehicles2">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <span>Stare curentă</span>
+                        <div class="value" id="status2">IDLE</div>
+                    </div>
+                    <div class="metric-card">
+                        <span>Prioritate</span>
+                        <div class="value" id="priority2">MED</div>
+                    </div>
+                </section>
+
+                <div class="traffic-light-wrap">
+                    <div class="traffic-light">
+                        <div id="light2-red" class="light red"></div>
+                        <div id="light2-yellow" class="light yellow"></div>
+                        <div id="light2-green" class="light green"></div>
+                    </div>
+                </div>
+
+                <div class="timer">
+                    <label>Timp rămas</label>
+                    <div class="time" id="timer2">0s</div>
+                </div>
+            </article>
+        </section>
+
+        <section class="analytics-row">
+            <div class="analytic-card">
+                <h3>Status sistem</h3>
+                <div class="status-chip" id="connection-status">🟢 Online</div>
+            </div>
+            <div class="analytic-card">
+                <h3>Cicluri active</h3>
+                <div class="analytic-value" id="cycle-count">0</div>
+            </div>
+            <div class="analytic-card">
+                <h3>Total vehicule</h3>
+                <div class="analytic-value" id="total-vehicles">0</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let cycleCount = 0;
+
+        const trafficSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/traffic/'
+        );
+
+        trafficSocket.onopen = function() {
+            console.log('WebSocket connection established');
+            const statusChip = document.getElementById('connection-status');
+            statusChip.textContent = '🟢 Online';
+            statusChip.classList.remove('offline');
+        };
+
+        trafficSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            // Update traffic light 1
+            document.getElementById('light1-red').classList.toggle('active', data.light1_status === 'red');
+            document.getElementById('light1-yellow').classList.toggle('active', data.light1_status === 'yellow');
+            document.getElementById('light1-green').classList.toggle('active', data.light1_status === 'green');
+            document.getElementById('vehicles1').innerText = data.vehicles1;
+            document.getElementById('timer1').innerText = data.timer1 + 's';
+            document.getElementById('status1').innerText = data.light1_status.toUpperCase();
+            document.getElementById('priority1').innerText = data.priority1 || 'MED';
+
+            // Update traffic light 2
+            document.getElementById('light2-red').classList.toggle('active', data.light2_status === 'red');
+            document.getElementById('light2-yellow').classList.toggle('active', data.light2_status === 'yellow');
+            document.getElementById('light2-green').classList.toggle('active', data.light2_status === 'green');
+            document.getElementById('vehicles2').innerText = data.vehicles2;
+            document.getElementById('timer2').innerText = data.timer2 + 's';
+            document.getElementById('status2').innerText = data.light2_status.toUpperCase();
+            document.getElementById('priority2').innerText = data.priority2 || 'MED';
+
+            const totalVehicles = parseInt(data.vehicles1, 10) + parseInt(data.vehicles2, 10);
+            document.getElementById('total-vehicles').innerText = totalVehicles;
+
+            if (data.light1_status === 'green' || data.light2_status === 'green') {
+                cycleCount++;
+                document.getElementById('cycle-count').innerText = cycleCount;
+            }
+        };
+
+        trafficSocket.onclose = function() {
+            console.error('Traffic socket closed unexpectedly');
+            const statusChip = document.getElementById('connection-status');
+            statusChip.textContent = '🔴 Offline';
+            statusChip.classList.add('offline');
+        };
+
+        const cameraFeeds = [
+            {
+                img: document.getElementById('camera1-feed'),
+                placeholder: document.getElementById('camera1-placeholder')
+            },
+            {
+                img: document.getElementById('camera2-feed'),
+                placeholder: document.getElementById('camera2-placeholder')
+            }
+        ];
+
+        cameraFeeds.forEach(({ img, placeholder }) => {
+            if (!img) {
+                return;
+            }
+
+            img.addEventListener('load', () => {
+                img.classList.add('loaded');
+                if (placeholder) {
+                    placeholder.classList.add('hidden');
+                }
+            });
+
+            img.addEventListener('error', () => {
+                img.classList.remove('loaded');
+                if (placeholder) {
+                    placeholder.classList.remove('hidden');
+                }
+            });
+        });
+
+        function refreshCameraFeeds() {
+            cameraFeeds.forEach(({ img }) => {
+                if (!img || !img.dataset.feedUrl) {
+                    return;
+                }
+                const cacheBuster = Date.now();
+                img.src = `${img.dataset.feedUrl}?t=${cacheBuster}`;
+            });
+        }
+
+        refreshCameraFeeds();
+        setInterval(refreshCameraFeeds, 2000);
+
+        trafficSocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+    </script>
+</body>
+</html>

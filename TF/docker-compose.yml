@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build: home/smartpi/projects/pi/TF/
+    container_name: traffic_system_web
+    command: daphne -b 0.0.0.0 -p 5000 TF.asgi:application
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - worker
+
+  worker:
+    build: .
+    container_name: traffic_system_worker
+    command: python manage.py traffic_logic
+    volumes:
+      - .:/app
+    # Pentru a permite accesul la hardware-ul Raspberry Pi (camere, GPIO)
+    # adaugă privilegiile necesare.
+    # ATENȚIE: Acest lucru oferă acces extins containerului.
+    privileged: true
+    # Sau, mai granular:
+    # devices:
+    #   - "/dev/vchiq:/dev/vchiq"
+    #   - "/dev/video0:/dev/video0"
+    #   - "/dev/gpiomem:/dev/gpiomem"
