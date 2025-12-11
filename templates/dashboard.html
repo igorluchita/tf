@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSales Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; background: #f5f5f5; }
+        h1 { margin-bottom: 12px; }
+        .thread { background: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .meta { color: #666; font-size: 12px; margin-bottom: 6px; }
+        .message { margin: 4px 0; padding: 8px; border-radius: 6px; background: #eef1f6; }
+    </style>
+</head>
+<body>
+    <h1>Sales Center</h1>
+    <p>Unified inbox for Facebook, Instagram and Telegram.</p>
+    {% for thread in threads %}
+        <div class="thread">
+            <div class="meta">
+                Platform: {{ thread.social_platform.platform|title }} |
+                Customer: {{ thread.customer_name|default:thread.external_customer_id }} |
+                Last updated: {{ thread.last_message_at|default:thread.updated_at }}
+            </div>
+            {% with last_msg=thread.messages.all|last %}
+                {% if last_msg %}
+                    <div class="message">
+                        <strong>{% if last_msg.is_incoming %}Incoming{% else %}Outgoing{% endif %}</strong>:
+                        {{ last_msg.content }}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+    {% empty %}
+        <p>No conversations yet.</p>
+    {% endfor %}
+</body>
+</html>
